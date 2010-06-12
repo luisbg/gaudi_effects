@@ -2,6 +2,9 @@
  * GStreamer
  * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>
  * 
+ * Chromium - color burning video effect.
+ * Based on Pete Warden's FreeFrame plugin with the same name.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -75,10 +78,9 @@ GST_DEBUG_CATEGORY_STATIC (gst_chromium_debug);
 #define CAPS_STR GST_VIDEO_CAPS_xRGB ";" GST_VIDEO_CAPS_xBGR
 #endif
 
-/* Filter signals and args */
+/* Filter signals and args. */
 enum
 {
-  /* FILL ME */
   LAST_SIGNAL
 };
 
@@ -88,7 +90,7 @@ enum
   PROP_SILENT
 };
 
-/* initializations */
+/* Initializations */
 
 const float pi = 3.141582f;
 
@@ -105,10 +107,8 @@ static gint cos_from_table(int angle);
 inline int abs_int(int val);
 static void transform (guint32 * src, guint32 * dest, gint video_area, gint c);
 
-/* the capabilities of the inputs and outputs.
- *
- * describe the real formats here.
- */
+/* The capabilities of the inputs and outputs. */
+
 static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
@@ -121,8 +121,6 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS (CAPS_STR)
     );
 
-//GST_BOILERPLATE (Gstchromium, gst_chromium, GstVideoFilter,
-//    GST_TYPE_VIDEO_FILTER);
 GST_BOILERPLATE (Gstchromium, gst_chromium, GstElement,
     GST_TYPE_ELEMENT);
 
@@ -153,7 +151,7 @@ gst_chromium_base_init (gpointer gclass)
       gst_static_pad_template_get (&sink_factory));
 }
 
-/* initialize the chromium's class */
+/* Initialize the chromium's class. */
 static void
 gst_chromium_class_init (GstchromiumClass * klass)
 {
@@ -171,10 +169,10 @@ gst_chromium_class_init (GstchromiumClass * klass)
           FALSE, G_PARAM_READWRITE));
 }
 
-/* initialize the new element
- * instantiate pads and add them to element
- * set pad calback functions
- * initialize instance structure
+/* Initialize the new element,
+ * instantiate pads and add them to element,
+ * set pad calback functions, and
+ * initialize instance structure.
  */
 static void
 gst_chromium_init (Gstchromium * filter,
@@ -233,7 +231,7 @@ gst_chromium_get_property (GObject * object, guint prop_id,
 
 /* GstElement vmethod implementations */
 
-/* this function handles the link with other elements */
+/* Handle the link with other elements. */
 static gboolean
 gst_chromium_set_caps (GstPad * pad, GstCaps * caps)
 {
@@ -253,9 +251,7 @@ gst_chromium_set_caps (GstPad * pad, GstCaps * caps)
   return gst_pad_set_caps (otherpad, caps);
 }
 
-/* chain function
- * this function does the actual processing
- */
+/* Actual processing. */
 static GstFlowReturn
 gst_chromium_chain (GstPad * pad, GstBuffer * in_buf)
 {
@@ -277,17 +273,12 @@ gst_chromium_chain (GstPad * pad, GstBuffer * in_buf)
   return gst_pad_push (filter->srcpad, out_buf);
 }
 
-/* entry point to initialize the plug-in
- * initialize the plug-in itself
- * register the element factories and other features
- */
+/* Entry point to initialize the plug-in.
+ * Register the element factories and other features. */
 static gboolean
 chromium_init (GstPlugin * chromium)
 {
-  /* debug category for fltering log messages
-   *
-   * exchange the string 'Template chromium' with your description
-   */
+  /* debug category for fltering log messages */
   GST_DEBUG_CATEGORY_INIT (gst_chromium_debug, "chromium",
       0, "Template chromium");
 
@@ -295,16 +286,11 @@ chromium_init (GstPlugin * chromium)
       GST_TYPE_CHROMIUM);
 }
 
-/* PACKAGE: this is usually set by autotools depending on some _INIT macro
- * in configure.ac and then written into and defined in config.h, but we can
- * just set it ourselves here in case someone doesn't use autotools to
- * compile this code. GST_PLUGIN_DEFINE needs PACKAGE to be defined.
- */
 #ifndef PACKAGE
 #define PACKAGE "chromium"
 #endif
 
-/* Register chromium */
+/* Register chromium. */
 GST_PLUGIN_DEFINE (
     GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
@@ -359,10 +345,10 @@ static gint cos_from_table(int angle)
   return cosTable[angle];
 }
 
-/* Transform processes each frame */
+/* Transform processes each frame. */
 static void transform (guint32 * src, guint32 * dest, gint video_area, gint c)
 {
-  guint32 i, o, r, g, b;
+  guint32 in, red, green, blue;
   gint x;
   guint32 edge_a, edge_b;
 
@@ -370,31 +356,29 @@ static void transform (guint32 * src, guint32 * dest, gint video_area, gint c)
   edge_b = 1;
 
   for (x = 0; x < video_area; x++) {
-    i = *src++;
+    in = *src++;
 
-    r = (i >> 16) & 0xff;
-    g = (i >> 8) & 0xff;
-    b = (i) & 0xff;
+    red = (in >> 16) & 0xff;
+    green = (in >> 8) & 0xff;
+    blue = (in) & 0xff;
 
-    r = abs_int(
+    red = abs_int(
           cos_from_table(
-            (r + edge_a) + 
-            ((r * edge_b) / 2)));
-    g = abs_int(
+            (red + edge_a) + 
+            ((red * edge_b) / 2)));
+    green = abs_int(
           cos_from_table(
-            (g + edge_a) + 
-            ((g * edge_b) / 2)));
-    b = abs_int(
+            (green + edge_a) + 
+            ((green * edge_b) / 2)));
+    blue = abs_int(
           cos_from_table(
-            (b + edge_a) + 
-            ((b * edge_b) / 2)));
+            (blue + edge_a) + 
+            ((blue * edge_b) / 2)));
 
-    r = gate_int ( r, 0, 255);
-    g = gate_int ( g, 0, 255);
-    b = gate_int ( b, 0, 255);
+    red = gate_int (red, 0, 255);
+    green = gate_int (green, 0, 255);
+    blue = gate_int (blue, 0, 255);
 
-    o = (r << 16) | (g << 8) | b;
-	
-    *dest++ = o;
+    *dest++ = (red << 16) | (green << 8) | blue;
   }
 }
