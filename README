@@ -5,6 +5,7 @@ gaudi effects is a set of video effect plugins for GStreamer.
 
 list of GStreamer elements:
 	- chromium
+	- burn
 
 
 HOW
