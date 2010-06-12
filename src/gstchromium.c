@@ -2,7 +2,7 @@
  * GStreamer
  * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>
  * 
- * Chromium - color burning video effect.
+ * Chromium - burning chrome video effect.
  * Based on Pete Warden's FreeFrame plugin with the same name.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -47,7 +47,7 @@
 /**
  * SECTION:element-chromium
  *
- * Chromium burns the colors of a video stream in realtime.
+ * Chromium breaks the colors of a video stream in realtime.
  *
  * <refsect2>
  * <title>Example launch line</title>
@@ -142,7 +142,7 @@ gst_chromium_base_init (gpointer gclass)
   gst_element_class_set_details_simple(element_class,
     "Chromium",
     "Filter/Effect/Video",
-    "Chromium burns the colors of the video signal.",
+    "Chromium breaks the colors of the video signal.",
     "Luis de Bethencourt <luis@debethencourt.com>");
 
   gst_element_class_add_pad_template (element_class,
@@ -295,7 +295,7 @@ GST_PLUGIN_DEFINE (
     GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     "chromium",
-    "Chromium burns the colors of a video signal.",
+    "Chromium breaks the colors of a video signal.",
     chromium_init,
     VERSION,
     "LGPL",

@@ -2,7 +2,7 @@
  * GStreamer
  * Copyright (C) 2010 Luis de Bethencourt <<user@hostname.org>>
  * 
- * Chromium - color burning video effect.
+ * Chromium - burning chrome video effect.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
