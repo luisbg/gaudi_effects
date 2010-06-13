@@ -1,6 +1,6 @@
 /*
  * GStreamer
- * Copyright (C) 2010 Luis de Bethencourt <<user@hostname.org>>
+ * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>>
  * 
  * Chromium - burning chrome video effect.
  *

@@ -1,8 +1,8 @@
 /*
  * GStreamer
- * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>
+ * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>>
  * 
- * Burn - curve adjustment film video effect.
+ * Dodge - saturation video effect.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -43,8 +43,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef __GST_BURN_H__
-#define __GST_BURN_H__
+#ifndef __GST_DODGE_H__
+#define __GST_DODGE_H__
 
 #include <gst/gst.h>
 
@@ -53,21 +53,21 @@
 G_BEGIN_DECLS
 
 /* #defines don't like whitespacey bits */
-#define GST_TYPE_BURN \
-  (gst_burn_get_type())
-#define GST_BURN(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_BURN,Gstburn))
-#define GST_BURN_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_BURN,GstburnClass))
-#define GST_IS_BURN(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_BURN))
-#define GST_IS_BURN_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_BURN))
+#define GST_TYPE_DODGE \
+  (gst_dodge_get_type())
+#define GST_DODGE(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_DODGE,Gstdodge))
+#define GST_DODGE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_DODGE,GstdodgeClass))
+#define GST_IS_DODGE(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_DODGE))
+#define GST_IS_DODGE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_DODGE))
 
-typedef struct _Gstburn      Gstburn;
-typedef struct _GstburnClass GstburnClass;
+typedef struct _Gstdodge      Gstdodge;
+typedef struct _GstdodgeClass GstdodgeClass;
 
-struct _Gstburn
+struct _Gstdodge
 {
   GstVideoFilter videofilter;
 
@@ -80,13 +80,13 @@ struct _Gstburn
   gboolean silent;
 };
 
-struct _GstburnClass 
+struct _GstdodgeClass 
 {
   GstElementClass parent_class;
 };
 
-GType gst_burn_get_type (void);
+GType gst_dodge_get_type (void);
 
 G_END_DECLS
 
-#endif /* __GST_BURN_H__ */
+#endif /* __GST_DODGE_H__ */
