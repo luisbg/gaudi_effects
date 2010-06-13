@@ -2,7 +2,7 @@
  * GStreamer
  * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>
  * 
- * Burn - curve adjustment video effect.
+ * Exclusion - color exclusion video effect.
  * Based on Pete Warden's FreeFrame plugin with the same name.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -45,15 +45,15 @@
  */
 
 /**
- * SECTION:element-burn
+ * SECTION:element-exclusion
  *
- * Burn adjusts the colors of a video stream in realtime.
+ * Exclusion saturates the colors of a video stream in realtime.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v videotestsrc ! burn ! ffmpegcolorspace ! auutovideosink
- * ]| This pipeline shows the effect of burn on a test stream
+ * gst-launch -v videotestsrc ! exclusion ! ffmpegcolorspace ! auutovideosink
+ * ]| This pipeline shows the effect of exclusion on a test stream
  * </refsect2>
  */
 
@@ -64,13 +64,13 @@
 #include <gst/gst.h>
 #include <math.h>
 
-#include "gstburn.h"
+#include "gstexclusion.h"
 
 #include <gst/video/video.h>
 #include <gst/controller/gstcontroller.h>
 
-GST_DEBUG_CATEGORY_STATIC (gst_burn_debug);
-#define GST_CAT_DEFAULT gst_burn_debug
+GST_DEBUG_CATEGORY_STATIC (gst_exclusion_debug);
+#define GST_CAT_DEFAULT gst_exclusion_debug
 
 #if G_BYTE_ORDER == G_LITTLE_ENDIAN
 #define CAPS_STR GST_VIDEO_CAPS_BGRx ";" GST_VIDEO_CAPS_RGBx
@@ -109,28 +109,28 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS (CAPS_STR)
     );
 
-GST_BOILERPLATE (Gstburn, gst_burn, GstElement,
+GST_BOILERPLATE (Gstexclusion, gst_exclusion, GstElement,
     GST_TYPE_ELEMENT);
 
-static void gst_burn_set_property (GObject * object, guint prop_id,
+static void gst_exclusion_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
-static void gst_burn_get_property (GObject * object, guint prop_id,
+static void gst_exclusion_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static gboolean gst_burn_set_caps (GstPad * pad, GstCaps * caps);
-static GstFlowReturn gst_burn_chain (GstPad * pad, GstBuffer * buf);
+static gboolean gst_exclusion_set_caps (GstPad * pad, GstCaps * caps);
+static GstFlowReturn gst_exclusion_chain (GstPad * pad, GstBuffer * buf);
 
 /* GObject vmethod implementations */
 
 static void
-gst_burn_base_init (gpointer gclass)
+gst_exclusion_base_init (gpointer gclass)
 {
   GstElementClass *element_class = GST_ELEMENT_CLASS (gclass);
 
   gst_element_class_set_details_simple(element_class,
-    "Burn",
+    "Exclusion",
     "Filter/Effect/Video",
-    "Burn adjusts the colors in the video signal.",
+    "Exclusion exclodes the colors in the video signal.",
     "Luis de Bethencourt <luis@debethencourt.com>");
 
   gst_element_class_add_pad_template (element_class,
@@ -139,9 +139,9 @@ gst_burn_base_init (gpointer gclass)
       gst_static_pad_template_get (&sink_factory));
 }
 
-/* Initialize the burn's class. */
+/* Initialize the exclusion's class. */
 static void
-gst_burn_class_init (GstburnClass * klass)
+gst_exclusion_class_init (GstexclusionClass * klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
@@ -149,8 +149,8 @@ gst_burn_class_init (GstburnClass * klass)
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
 
-  gobject_class->set_property = gst_burn_set_property;
-  gobject_class->get_property = gst_burn_get_property;
+  gobject_class->set_property = gst_exclusion_set_property;
+  gobject_class->get_property = gst_exclusion_get_property;
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
@@ -163,16 +163,16 @@ gst_burn_class_init (GstburnClass * klass)
  * initialize instance structure.
  */
 static void
-gst_burn_init (Gstburn * filter,
-    GstburnClass * gclass)
+gst_exclusion_init (Gstexclusion * filter,
+    GstexclusionClass * gclass)
 {
   filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
   gst_pad_set_setcaps_function (filter->sinkpad,
-                                GST_DEBUG_FUNCPTR(gst_burn_set_caps));
+                                GST_DEBUG_FUNCPTR(gst_exclusion_set_caps));
   gst_pad_set_getcaps_function (filter->sinkpad,
                                 GST_DEBUG_FUNCPTR(gst_pad_proxy_getcaps));
   gst_pad_set_chain_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_burn_chain));
+                              GST_DEBUG_FUNCPTR(gst_exclusion_chain));
 
   filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
   gst_pad_set_getcaps_function (filter->srcpad,
@@ -184,10 +184,10 @@ gst_burn_init (Gstburn * filter,
 }
 
 static void
-gst_burn_set_property (GObject * object, guint prop_id,
+gst_exclusion_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  Gstburn *filter = GST_BURN (object);
+  Gstexclusion *filter = GST_EXCLUSION (object);
 
   switch (prop_id) {
     case PROP_SILENT:
@@ -200,10 +200,10 @@ gst_burn_set_property (GObject * object, guint prop_id,
 }
 
 static void
-gst_burn_get_property (GObject * object, guint prop_id,
+gst_exclusion_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  Gstburn *filter = GST_BURN (object);
+  Gstexclusion *filter = GST_EXCLUSION (object);
 
   switch (prop_id) {
     case PROP_SILENT:
@@ -219,13 +219,13 @@ gst_burn_get_property (GObject * object, guint prop_id,
 
 /* Handle the link with other elements. */
 static gboolean
-gst_burn_set_caps (GstPad * pad, GstCaps * caps)
+gst_exclusion_set_caps (GstPad * pad, GstCaps * caps)
 {
-  Gstburn *filter;
+  Gstexclusion *filter;
   GstStructure *structure;
   GstPad *otherpad;
 
-  filter = GST_BURN (gst_pad_get_parent (pad));
+  filter = GST_EXCLUSION (gst_pad_get_parent (pad));
   otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
 
   structure = gst_caps_get_structure (caps, 0);
@@ -239,16 +239,16 @@ gst_burn_set_caps (GstPad * pad, GstCaps * caps)
 
 /* Actual processing. */
 static GstFlowReturn
-gst_burn_chain (GstPad * pad, GstBuffer * in_buf)
+gst_exclusion_chain (GstPad * pad, GstBuffer * in_buf)
 {
-  Gstburn *filter;
+  Gstexclusion *filter;
   GstBuffer * out_buf = gst_buffer_copy(in_buf); 
   gint width, height, video_size;
 
   guint32 *src = (guint32 * ) GST_BUFFER_DATA (in_buf);
   guint32 *dest = (guint32 * ) GST_BUFFER_DATA (out_buf);
 
-  filter = GST_BURN (GST_OBJECT_PARENT (pad));
+  filter = GST_EXCLUSION (GST_OBJECT_PARENT (pad));
   width = filter->width;
   height = filter->height;
   video_size = width * height;
@@ -261,27 +261,27 @@ gst_burn_chain (GstPad * pad, GstBuffer * in_buf)
 /* Entry point to initialize the plug-in.
  * Register the element factories and other features. */
 static gboolean
-burn_init (GstPlugin * burn)
+exclusion_init (GstPlugin * exclusion)
 {
   /* debug category for fltering log messages */
-  GST_DEBUG_CATEGORY_INIT (gst_burn_debug, "burn",
-      0, "Template burn");
+  GST_DEBUG_CATEGORY_INIT (gst_exclusion_debug, "exclusion",
+      0, "Template exclusion");
 
-  return gst_element_register (burn, "burn", GST_RANK_NONE,
-      GST_TYPE_BURN);
+  return gst_element_register (exclusion, "exclusion", GST_RANK_NONE,
+      GST_TYPE_EXCLUSION);
 }
 
 #ifndef PACKAGE
-#define PACKAGE "burn"
+#define PACKAGE "exclusion"
 #endif
 
-/* Register burn. */
+/* Register exclusion. */
 GST_PLUGIN_DEFINE (
     GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    "burn",
-    "Burn adjusts the colors in the video signal.",
-    burn_init,
+    "exclusion",
+    "Exclusion excludes the colors in the video signal.",
+    exclusion_init,
     VERSION,
     "LGPL",
     "GStreamer",
@@ -307,7 +307,7 @@ static void transform (guint32 * src, guint32 * dest, gint video_area)
 {
   guint32 in, red, green, blue;
   gint x;
-  gint adjustment = 175;
+  gint factor = 175;
 
   for (x = 0; x < video_area; x++) {
     in = *src++;
@@ -316,9 +316,15 @@ static void transform (guint32 * src, guint32 * dest, gint video_area)
     green = (in >> 8) & 0xff;
     blue = (in) & 0xff;
 
-    red = 256 - ((256 * (255 - red)) / (red + adjustment));
-    green = 256 - ((256 * (255 - green)) / (green + adjustment));
-    blue = 256 - ((256 * (255 - blue)) / (blue + adjustment));
+    red = factor - 
+          (((factor - red) * (factor - red) / factor) +
+          ((green * red) / factor));
+    green = factor - 
+          (((factor - green) * (factor - green) / factor) +
+          ((green * green) / factor));
+    blue = factor - 
+          (((factor - blue) * (factor - blue) / factor) +
+          ((blue * blue) / factor));
 
     red = gate_int (red, 0, 255);
     green = gate_int (green, 0, 255);

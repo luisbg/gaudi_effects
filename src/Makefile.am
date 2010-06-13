@@ -1,4 +1,5 @@
-plugin_LTLIBRARIES = libgstchromium.la libgstburn.la libgstdodge.la
+plugin_LTLIBRARIES = libgstchromium.la libgstburn.la libgstdodge.la \
+   libgstexclusion.la
 
 # sources used to compile Chromium
 libgstchromium_la_SOURCES = gstchromium.c gstchromium.h
@@ -23,6 +24,15 @@ libgstdodge_la_CFLAGS = $(GST_CFLAGS)
 libgstdodge_la_LIBADD = $(GST_LIBS)
 libgstdodge_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstdodge_la_LIBTOOLFLAGS = --tag=disable-static
+
+# sources used to compile Dodge
+libgstexclusion_la_SOURCES = gstexclusion.c gstexclusion.h
+# compiler and linker flags used to compile Dodge, set in configure.ac
+libgstexclusion_la_CFLAGS = $(GST_CFLAGS)
+libgstexclusion_la_LIBADD = $(GST_LIBS)
+libgstexclusion_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstexclusion_la_LIBTOOLFLAGS = --tag=disable-static
+
 
 # headers we need but don't want installed
 noinst_HEADERS = gstplugin.h

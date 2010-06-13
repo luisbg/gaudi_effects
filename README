@@ -7,6 +7,7 @@ list of GStreamer elements:
 	- chromium
 	- burn
 	- dodge
+	- exclusion
 
 
 HOW

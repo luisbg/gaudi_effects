@@ -105,7 +105,7 @@ static gint gate_int ( gint value, gint min, gint max);
 void setup_cos_table(void);
 static gint cos_from_table(int angle);
 inline int abs_int(int val);
-static void transform (guint32 * src, guint32 * dest, gint video_area, gint c);
+static void transform (guint32 * src, guint32 * dest, gint video_area);
 
 /* The capabilities of the inputs and outputs. */
 
@@ -258,7 +258,6 @@ gst_chromium_chain (GstPad * pad, GstBuffer * in_buf)
   Gstchromium *filter;
   GstBuffer * out_buf = gst_buffer_copy(in_buf); 
   gint width, height, video_size;
-  gint parameter = 3;
 
   guint32 *src = (guint32 * ) GST_BUFFER_DATA (in_buf);
   guint32 *dest = (guint32 * ) GST_BUFFER_DATA (out_buf);
@@ -268,7 +267,7 @@ gst_chromium_chain (GstPad * pad, GstBuffer * in_buf)
   height = filter->height;
   video_size = width * height;
 
-  transform (src, dest, video_size, parameter);
+  transform (src, dest, video_size);
 
   return gst_pad_push (filter->srcpad, out_buf);
 }
@@ -346,7 +345,7 @@ static gint cos_from_table(int angle)
 }
 
 /* Transform processes each frame. */
-static void transform (guint32 * src, guint32 * dest, gint video_area, gint c)
+static void transform (guint32 * src, guint32 * dest, gint video_area)
 {
   guint32 in, red, green, blue;
   gint x;

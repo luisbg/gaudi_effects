@@ -307,11 +307,6 @@ static void transform (guint32 * src, guint32 * dest, gint video_area)
 {
   guint32 in, red, green, blue;
   gint x;
-  guint32 edge_a, edge_b;
-  gint adjustment = 175;
-
-  edge_a = 200;
-  edge_b = 1;
 
   for (x = 0; x < video_area; x++) {
     in = *src++;
