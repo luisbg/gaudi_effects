@@ -1,20 +1,23 @@
-2010-20-10	Luis de Bethencourt  <luis@debethencourt.com>
+2010-10-20	Luis de Bethencourt  <luis@debethencourt.com>
 	* Setter and getter functions for dynamic properties added.
 
-2010-13-06  Luis de Bethencourt  <luis@debethencourt.com>
+2010-08-02	Jan Schmidt <thaytan@noraisin.net>
+	* Gaussian blur effect added.
+
+2010-06-13  Luis de Bethencourt  <luis@debethencourt.com>
 	* Dilate effect added.
 
-2010-13-06  Luis de Bethencourt  <luis@debethencourt.com>
+2010-06-13  Luis de Bethencourt  <luis@debethencourt.com>
 	* Solarize effect added.
 
-2010-13-06  Luis de Bethencourt  <luis@debethencourt.com>
+2010-06-13  Luis de Bethencourt  <luis@debethencourt.com>
 	* Exclusion effect added.
 
-2010-13-06  Luis de Bethencourt  <luis@debethencourt.com>
+2010-06-13  Luis de Bethencourt  <luis@debethencourt.com>
 	* Dodge effect added.
 
-2010-12-06  Luis de Bethencourt  <luis@debethencourt.com>
+2010-06-13  Luis de Bethencourt  <luis@debethencourt.com>
 	* Burn effect added.
 
-2010-12-06  Luis de Bethencourt  <luis@debethencourt.com>
+2010-06-13  Luis de Bethencourt  <luis@debethencourt.com>
 	* initial creation. let's start with Chromium

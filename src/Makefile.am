@@ -1,5 +1,5 @@
 plugin_LTLIBRARIES = libgstchromium.la libgstburn.la libgstdodge.la \
-   libgstexclusion.la libgstsolarize.la libgstdilate.la
+   libgstexclusion.la libgstsolarize.la libgstdilate.la libgstgaussblur.la
 
 # sources used to compile Chromium
 libgstchromium_la_SOURCES = gstchromium.c gstchromium.h
@@ -48,6 +48,14 @@ libgstdilate_la_CFLAGS = $(GST_CFLAGS)
 libgstdilate_la_LIBADD = $(GST_LIBS)
 libgstdilate_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstdilate_la_LIBTOOLFLAGS = --tag=disable-static
+
+# sources used to compile Gaussian Blur
+libgstgaussblur_la_SOURCES = gstgaussblur.c gstgaussblur.h
+# compiler and linker flags used to compile Gaussian Blur, set in configure.ac
+libgstgaussblur_la_CFLAGS = $(GST_CFLAGS)
+libgstgaussblur_la_LIBADD = $(GST_LIBS)
+libgstgaussblur_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstgaussblur_la_LIBTOOLFLAGS = --tag=disable-static
 
 # headers we need but don't want installed
 noinst_HEADERS = gstplugin.h

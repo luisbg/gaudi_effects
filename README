@@ -10,6 +10,7 @@ list of GStreamer elements:
 	- exclusion
 	- solarize
 	- dilate
+	- gaussianblur
 
 
 HOW
