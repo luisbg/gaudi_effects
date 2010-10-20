@@ -86,14 +86,22 @@ enum
 
 enum
 {
-  PROP_0,
+  PROP_0 = 0,
+  PROP_THRESHOLD,
+  PROP_START,
+  PROP_END,
   PROP_SILENT
 };
 
 /* Initializations */
 
+#define DEFAULT_THRESHOLD 127
+#define DEFAULT_START 50
+#define DEFAULT_END 185
+
 static gint gate_int (gint value, gint min, gint max);
-static void transform (guint32 * src, guint32 * dest, gint video_area);
+static void transform (guint32 * src, guint32 * dest, gint video_area,
+		       gint threshold, gint start, gint end);
 
 /* The capabilities of the inputs and outputs. */
 
@@ -152,6 +160,21 @@ gst_solarize_class_init (GstsolarizeClass * klass)
   gobject_class->set_property = gst_solarize_set_property;
   gobject_class->get_property = gst_solarize_get_property;
 
+  g_object_class_install_property (gobject_class, PROP_THRESHOLD,
+      g_param_spec_uint ("threshold", "Threshold",
+	  "Threshold parameter", 0, 256, DEFAULT_THRESHOLD,
+	  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_CONTROLLABLE));
+
+  g_object_class_install_property (gobject_class, PROP_START,
+      g_param_spec_uint ("start", "Start",
+	  "Start parameter", 0, 256, DEFAULT_START,
+	  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_CONTROLLABLE));
+
+  g_object_class_install_property (gobject_class, PROP_END,
+      g_param_spec_uint ("end", "End",
+	  "End parameter", 0, 256, DEFAULT_END,
+	  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_CONTROLLABLE));
+
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
           FALSE, G_PARAM_READWRITE));
@@ -180,6 +203,10 @@ gst_solarize_init (Gstsolarize * filter,
 
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
+
+  filter->threshold = DEFAULT_THRESHOLD;
+  filter->start = DEFAULT_START;
+  filter->end = DEFAULT_END;
   filter->silent = FALSE;
 }
 
@@ -190,12 +217,21 @@ gst_solarize_set_property (GObject * object, guint prop_id,
   Gstsolarize *filter = GST_SOLARIZE (object);
 
   switch (prop_id) {
-    case PROP_SILENT:
-      filter->silent = g_value_get_boolean (value);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+  case PROP_SILENT:
+    filter->silent = g_value_get_boolean (value);
+    break;
+  case PROP_THRESHOLD:
+    filter->threshold = g_value_get_uint (value);
+    break;
+  case PROP_START:
+    filter->start = g_value_get_uint (value);
+    break;
+  case PROP_END:
+    filter->end = g_value_get_uint (value);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
   }
 }
 
@@ -206,12 +242,21 @@ gst_solarize_get_property (GObject * object, guint prop_id,
   Gstsolarize *filter = GST_SOLARIZE (object);
 
   switch (prop_id) {
-    case PROP_SILENT:
-      g_value_set_boolean (value, filter->silent);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+  case PROP_SILENT:
+    g_value_set_boolean (value, filter->silent);
+    break;
+  case PROP_THRESHOLD:
+    g_value_set_uint (value, filter->threshold);
+    break;
+  case PROP_START:
+    g_value_set_uint (value, filter->start);
+    break;
+  case PROP_END:
+    g_value_set_uint (value, filter->end);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
   }
 }
 
@@ -243,7 +288,7 @@ gst_solarize_chain (GstPad * pad, GstBuffer * in_buf)
 {
   Gstsolarize *filter;
   GstBuffer * out_buf = gst_buffer_copy(in_buf); 
-  gint width, height, video_size;
+  gint width, height, video_size, threshold, start, end;
 
   guint32 *src = (guint32 * ) GST_BUFFER_DATA (in_buf);
   guint32 *dest = (guint32 * ) GST_BUFFER_DATA (out_buf);
@@ -252,8 +297,11 @@ gst_solarize_chain (GstPad * pad, GstBuffer * in_buf)
   width = filter->width;
   height = filter->height;
   video_size = width * height;
+  threshold = filter->threshold;
+  start = filter->start;
+  end = filter->end;
 
-  transform (src, dest, video_size);
+  transform (src, dest, video_size, threshold, start, end);
 
   return gst_pad_push (filter->srcpad, out_buf);
 }
@@ -303,14 +351,13 @@ static gint gate_int ( gint value, gint min, gint max)
 }
 
 /* Transform processes each frame. */
-static void transform (guint32 * src, guint32 * dest, gint video_area)
+static void transform (guint32 * src, guint32 * dest, gint video_area,
+		       gint threshold, gint start, gint end)
 {
   guint32 in;
   guint32 color[3];
   gint x, c;
-  gint threshold = 127; 
-  gint start = 50;
-  gint end = 185;
+
   gint floor = 0;
   gint ceiling = 255;
 

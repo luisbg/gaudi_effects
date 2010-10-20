@@ -77,6 +77,7 @@ struct _Gstburn
 
   GstPad *sinkpad, *srcpad;
 
+  gint adjustment;
   gboolean silent;
 };
 

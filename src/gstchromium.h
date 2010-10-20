@@ -77,6 +77,7 @@ struct _Gstchromium
 
   GstPad *sinkpad, *srcpad;
 
+  gint edge_a, edge_b;
   gboolean silent;
 };
 

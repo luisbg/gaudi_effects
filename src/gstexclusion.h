@@ -77,6 +77,7 @@ struct _Gstexclusion
 
   GstPad *sinkpad, *srcpad;
 
+  gint factor;
   gboolean silent;
 };
 

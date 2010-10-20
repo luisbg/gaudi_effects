@@ -86,14 +86,18 @@ enum
 
 enum
 {
-  PROP_0,
+  PROP_0 = 0,
+  PROP_FACTOR,
   PROP_SILENT
 };
 
 /* Initializations */
 
+#define DEFAULT_FACTOR 175
+
 static gint gate_int (gint value, gint min, gint max);
-static void transform (guint32 * src, guint32 * dest, gint video_area);
+static void transform (guint32 * src, guint32 * dest, gint video_area,
+		       gint factor);
 
 /* The capabilities of the inputs and outputs. */
 
@@ -152,6 +156,11 @@ gst_exclusion_class_init (GstexclusionClass * klass)
   gobject_class->set_property = gst_exclusion_set_property;
   gobject_class->get_property = gst_exclusion_get_property;
 
+  g_object_class_install_property (gobject_class, PROP_FACTOR,
+      g_param_spec_uint ("factor", "Factor",
+	  "Exclusion factor parameter", 0, 175, DEFAULT_FACTOR,
+	  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_CONTROLLABLE));
+
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
           FALSE, G_PARAM_READWRITE));
@@ -180,6 +189,8 @@ gst_exclusion_init (Gstexclusion * filter,
 
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
+
+  filter->factor = DEFAULT_FACTOR;
   filter->silent = FALSE;
 }
 
@@ -190,12 +201,15 @@ gst_exclusion_set_property (GObject * object, guint prop_id,
   Gstexclusion *filter = GST_EXCLUSION (object);
 
   switch (prop_id) {
-    case PROP_SILENT:
-      filter->silent = g_value_get_boolean (value);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+  case PROP_SILENT:
+    filter->silent = g_value_get_boolean (value);
+    break;
+  case PROP_FACTOR:
+    filter->factor = g_value_get_uint (value);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
   }
 }
 
@@ -205,14 +219,19 @@ gst_exclusion_get_property (GObject * object, guint prop_id,
 {
   Gstexclusion *filter = GST_EXCLUSION (object);
 
+  GST_OBJECT_LOCK (filter);
   switch (prop_id) {
-    case PROP_SILENT:
-      g_value_set_boolean (value, filter->silent);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+  case PROP_SILENT:
+    g_value_set_boolean (value, filter->silent);
+    break;
+  case PROP_FACTOR:
+    g_value_set_uint (value, filter->factor);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
   }
+  GST_OBJECT_UNLOCK (filter);
 }
 
 /* GstElement vmethod implementations */
@@ -243,7 +262,7 @@ gst_exclusion_chain (GstPad * pad, GstBuffer * in_buf)
 {
   Gstexclusion *filter;
   GstBuffer * out_buf = gst_buffer_copy(in_buf); 
-  gint width, height, video_size;
+  gint width, height, video_size, factor;
 
   guint32 *src = (guint32 * ) GST_BUFFER_DATA (in_buf);
   guint32 *dest = (guint32 * ) GST_BUFFER_DATA (out_buf);
@@ -252,8 +271,9 @@ gst_exclusion_chain (GstPad * pad, GstBuffer * in_buf)
   width = filter->width;
   height = filter->height;
   video_size = width * height;
+  factor = filter->factor;
 
-  transform (src, dest, video_size);
+  transform (src, dest, video_size, factor);
 
   return gst_pad_push (filter->srcpad, out_buf);
 }
@@ -303,11 +323,11 @@ static gint gate_int ( gint value, gint min, gint max)
 }
 
 /* Transform processes each frame. */
-static void transform (guint32 * src, guint32 * dest, gint video_area)
+static void transform (guint32 * src, guint32 * dest, gint video_area,
+		       gint factor)
 {
   guint32 in, red, green, blue;
   gint x;
-  gint factor = 175;
 
   for (x = 0; x < video_area; x++) {
     in = *src++;

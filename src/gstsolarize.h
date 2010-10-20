@@ -77,6 +77,7 @@ struct _Gstsolarize
 
   GstPad *sinkpad, *srcpad;
 
+  gint threshold, start, end;
   gboolean silent;
 };
 
