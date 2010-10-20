@@ -9,6 +9,7 @@ list of GStreamer elements:
 	- dodge
 	- exclusion
 	- solarize
+	- dilate
 
 
 HOW
@@ -19,4 +20,4 @@ First you need to build the elements:
 	make
 
 Then you can use the elements, for example:
-    gst-launch-0.10 --gst-plugin-path=$PWD filesrc location=$some_video ! decodebin ! ffmpegcolorspace ! chromium ! ffmpegcolorspace ! xvimagesink
+    gst-launch-0.10 --gst-plugin-path=$working_folder filesrc location=$some_video ! decodebin ! ffmpegcolorspace ! chromium ! ffmpegcolorspace ! xvimagesink
