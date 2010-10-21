@@ -52,7 +52,7 @@
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v videotestsrc ! dodge ! ffmpegcolorspace ! auutovideosink
+ * gst-launch -v videotestsrc ! dodge ! ffmpegcolorspace ! autovideosink
  * ]| This pipeline shows the effect of dodge on a test stream
  * </refsect2>
  */
@@ -64,6 +64,7 @@
 #include <gst/gst.h>
 #include <math.h>
 
+#include "gstplugin.h"
 #include "gstdodge.h"
 
 #include <gst/video/video.h>
@@ -109,16 +110,17 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS (CAPS_STR)
     );
 
-GST_BOILERPLATE (Gstdodge, gst_dodge, GstElement,
-    GST_TYPE_ELEMENT);
+GST_BOILERPLATE (GstDodge, gst_dodge, GstVideoFilter, GST_TYPE_VIDEO_FILTER);
 
 static void gst_dodge_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gst_dodge_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static gboolean gst_dodge_set_caps (GstPad * pad, GstCaps * caps);
-static GstFlowReturn gst_dodge_chain (GstPad * pad, GstBuffer * buf);
+static gboolean gst_dodge_set_caps (GstBaseTransform * btrans,
+    GstCaps * incaps, GstCaps * outcaps);
+static GstFlowReturn gst_dodge_transform (GstBaseTransform * btrans,
+    GstBuffer * in_buf, GstBuffer * out_buf);
 
 /* GObject vmethod implementations */
 
@@ -127,11 +129,11 @@ gst_dodge_base_init (gpointer gclass)
 {
   GstElementClass *element_class = GST_ELEMENT_CLASS (gclass);
 
-  gst_element_class_set_details_simple(element_class,
-    "Dodge",
-    "Filter/Effect/Video",
-    "Dodge saturates the colors in the video signal.",
-    "Luis de Bethencourt <luis@debethencourt.com>");
+  gst_element_class_set_details_simple (element_class,
+      "Dodge",
+      "Filter/Effect/Video",
+      "Dodge saturates the colors in the video signal.",
+      "Luis de Bethencourt <luis@debethencourt.com>");
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&src_factory));
@@ -141,20 +143,20 @@ gst_dodge_base_init (gpointer gclass)
 
 /* Initialize the dodge's class. */
 static void
-gst_dodge_class_init (GstdodgeClass * klass)
+gst_dodge_class_init (GstDodgeClass * klass)
 {
-  GObjectClass *gobject_class;
-  GstElementClass *gstelement_class;
-
-  gobject_class = (GObjectClass *) klass;
-  gstelement_class = (GstElementClass *) klass;
+  GObjectClass *gobject_class = (GObjectClass *) klass;
+  GstBaseTransformClass *trans_class = (GstBaseTransformClass *) klass;
 
   gobject_class->set_property = gst_dodge_set_property;
   gobject_class->get_property = gst_dodge_get_property;
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
-          FALSE, G_PARAM_READWRITE));
+          FALSE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  trans_class->set_caps = GST_DEBUG_FUNCPTR (gst_dodge_set_caps);
+  trans_class->transform = GST_DEBUG_FUNCPTR (gst_dodge_transform);
 }
 
 /* Initialize the new element,
@@ -163,23 +165,8 @@ gst_dodge_class_init (GstdodgeClass * klass)
  * initialize instance structure.
  */
 static void
-gst_dodge_init (Gstdodge * filter,
-    GstdodgeClass * gclass)
+gst_dodge_init (GstDodge * filter, GstDodgeClass * gclass)
 {
-  filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
-  gst_pad_set_setcaps_function (filter->sinkpad,
-                                GST_DEBUG_FUNCPTR(gst_dodge_set_caps));
-  gst_pad_set_getcaps_function (filter->sinkpad,
-                                GST_DEBUG_FUNCPTR(gst_pad_proxy_getcaps));
-  gst_pad_set_chain_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_dodge_chain));
-
-  filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
-  gst_pad_set_getcaps_function (filter->srcpad,
-                                GST_DEBUG_FUNCPTR(gst_pad_proxy_getcaps));
-
-  gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
-  gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
   filter->silent = FALSE;
 }
 
@@ -187,7 +174,7 @@ static void
 gst_dodge_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  Gstdodge *filter = GST_DODGE (object);
+  GstDodge *filter = GST_DODGE (object);
 
   switch (prop_id) {
     case PROP_SILENT:
@@ -203,7 +190,7 @@ static void
 gst_dodge_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  Gstdodge *filter = GST_DODGE (object);
+  GstDodge *filter = GST_DODGE (object);
 
   switch (prop_id) {
     case PROP_SILENT:
@@ -219,79 +206,53 @@ gst_dodge_get_property (GObject * object, guint prop_id,
 
 /* Handle the link with other elements. */
 static gboolean
-gst_dodge_set_caps (GstPad * pad, GstCaps * caps)
+gst_dodge_set_caps (GstBaseTransform * btrans, GstCaps * incaps,
+    GstCaps * outcaps)
 {
-  Gstdodge *filter;
+  GstDodge *filter = GST_DODGE (btrans);
   GstStructure *structure;
-  GstPad *otherpad;
+  gboolean ret = TRUE;
 
-  filter = GST_DODGE (gst_pad_get_parent (pad));
-  otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
+  structure = gst_caps_get_structure (incaps, 0);
+  ret &= gst_structure_get_int (structure, "width", &filter->width);
+  ret &= gst_structure_get_int (structure, "height", &filter->height);
 
-  structure = gst_caps_get_structure (caps, 0);
-  gst_structure_get_int (structure, "width", &filter->width);
-  gst_structure_get_int (structure, "height", &filter->height);
-
-  gst_object_unref (filter);
-
-  return gst_pad_set_caps (otherpad, caps);
+  return ret;
 }
 
 /* Actual processing. */
 static GstFlowReturn
-gst_dodge_chain (GstPad * pad, GstBuffer * in_buf)
+gst_dodge_transform (GstBaseTransform * btrans,
+    GstBuffer * in_buf, GstBuffer * out_buf)
 {
-  Gstdodge *filter;
-  GstBuffer * out_buf = gst_buffer_copy(in_buf); 
-  gint width, height, video_size;
+  GstDodge *filter = GST_DODGE (btrans);
+  guint32 *src = (guint32 *) GST_BUFFER_DATA (in_buf);
+  guint32 *dest = (guint32 *) GST_BUFFER_DATA (out_buf);
+  gint video_size;
 
-  guint32 *src = (guint32 * ) GST_BUFFER_DATA (in_buf);
-  guint32 *dest = (guint32 * ) GST_BUFFER_DATA (out_buf);
-
-  filter = GST_DODGE (GST_OBJECT_PARENT (pad));
-  width = filter->width;
-  height = filter->height;
-  video_size = width * height;
+  video_size = filter->width * filter->height;
 
   transform (src, dest, video_size);
 
-  return gst_pad_push (filter->srcpad, out_buf);
+  return GST_FLOW_OK;
 }
 
 /* Entry point to initialize the plug-in.
  * Register the element factories and other features. */
-static gboolean
-dodge_init (GstPlugin * dodge)
+gboolean
+gst_dodge_plugin_init (GstPlugin * dodge)
 {
   /* debug category for fltering log messages */
-  GST_DEBUG_CATEGORY_INIT (gst_dodge_debug, "dodge",
-      0, "Template dodge");
+  GST_DEBUG_CATEGORY_INIT (gst_dodge_debug, "dodge", 0, "Template dodge");
 
-  return gst_element_register (dodge, "dodge", GST_RANK_NONE,
-      GST_TYPE_DODGE);
+  return gst_element_register (dodge, "dodge", GST_RANK_NONE, GST_TYPE_DODGE);
 }
-
-#ifndef PACKAGE
-#define PACKAGE "dodge"
-#endif
-
-/* Register dodge. */
-GST_PLUGIN_DEFINE (
-    GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    "dodge",
-    "Dodge saturates the colors in the video signal.",
-    dodge_init,
-    VERSION,
-    "LGPL",
-    "GStreamer",
-    "http://gstreamer.net/"
-)
 
 /*** Now the image processing work.... ***/
 
 /* Keep the values inbounds. */
-static gint gate_int ( gint value, gint min, gint max)
+static gint
+gate_int (gint value, gint min, gint max)
 {
   if (value < min) {
     return min;
@@ -303,7 +264,8 @@ static gint gate_int ( gint value, gint min, gint max)
 }
 
 /* Transform processes each frame. */
-static void transform (guint32 * src, guint32 * dest, gint video_area)
+static void
+transform (guint32 * src, guint32 * dest, gint video_area)
 {
   guint32 in, red, green, blue;
   gint x;

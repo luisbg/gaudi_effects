@@ -56,18 +56,18 @@ G_BEGIN_DECLS
 #define GST_TYPE_BURN \
   (gst_burn_get_type())
 #define GST_BURN(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_BURN,Gstburn))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_BURN,GstBurn))
 #define GST_BURN_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_BURN,GstburnClass))
+  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_BURN,GstBurnClass))
 #define GST_IS_BURN(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_BURN))
 #define GST_IS_BURN_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_BURN))
 
-typedef struct _Gstburn      Gstburn;
-typedef struct _GstburnClass GstburnClass;
+typedef struct _GstBurn      GstBurn;
+typedef struct _GstBurnClass GstBurnClass;
 
-struct _Gstburn
+struct _GstBurn
 {
   GstVideoFilter videofilter;
 
@@ -75,15 +75,13 @@ struct _Gstburn
 
   gint width, height;
 
-  GstPad *sinkpad, *srcpad;
-
   gint adjustment;
   gboolean silent;
 };
 
-struct _GstburnClass 
+struct _GstBurnClass
 {
-  GstElementClass parent_class;
+  GstVideoFilterClass parent_class;
 };
 
 GType gst_burn_get_type (void);

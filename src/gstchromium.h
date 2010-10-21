@@ -47,47 +47,34 @@
 #define __GST_CHROMIUM_H__
 
 #include <gst/gst.h>
-
+#include <gst/video/video.h>
 #include <gst/video/gstvideofilter.h>
 
 G_BEGIN_DECLS
 
-/* #defines don't like whitespacey bits */
-#define GST_TYPE_CHROMIUM \
-  (gst_chromium_get_type())
+#define GST_TYPE_CHROMIUM (gst_chromium_get_type())
 #define GST_CHROMIUM(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_CHROMIUM,Gstchromium))
-#define GST_CHROMIUM_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_CHROMIUM,GstchromiumClass))
-#define GST_IS_CHROMIUM(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_CHROMIUM))
-#define GST_IS_CHROMIUM_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_CHROMIUM))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_CHROMIUM,GstChromium))
 
-typedef struct _Gstchromium      Gstchromium;
-typedef struct _GstchromiumClass GstchromiumClass;
+typedef struct GstChromium      GstChromium;
+typedef struct GstChromiumClass GstChromiumClass;
 
-struct _Gstchromium
+struct GstChromium
 {
   GstVideoFilter videofilter;
-
-  /* < private > */
-
   gint width, height;
-
-  GstPad *sinkpad, *srcpad;
 
   gint edge_a, edge_b;
   gboolean silent;
 };
 
-struct _GstchromiumClass 
+struct GstChromiumClass
 {
-  GstElementClass parent_class;
+  GstVideoFilterClass parent_class;
 };
 
 GType gst_chromium_get_type (void);
 
 G_END_DECLS
 
-#endif /* __GST_CHROMIUM_H__ */
+#endif

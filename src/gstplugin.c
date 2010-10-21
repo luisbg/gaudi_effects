@@ -1,9 +1,9 @@
 /*
  * GStreamer
+ * Copyright (C) 2005 Thomas Vander Stichele <thomas@apestaart.org>
+ * Copyright (C) 2005 Ronald S. Bultje <rbultje@ronald.bitfreak.net>
  * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>
  * 
- * Solarize - smart inverse film video effect.
- *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -43,49 +43,41 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef __GST_SOLARIZE_H__
-#define __GST_SOLARIZE_H__
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
 #include <gst/gst.h>
 
-#include <gst/video/gstvideofilter.h>
+#include "gstplugin.h"
 
-G_BEGIN_DECLS
+/* PACKAGE: this is usually set by autotools depending on some _INIT macro
+ * in configure.ac and then written into and defined in config.h, but we can
+ * just set it ourselves here in case someone doesn't use autotools to
+ * compile this code. GST_PLUGIN_DEFINE needs PACKAGE to be defined.
+ */
+#ifndef PACKAGE
+#define PACKAGE "gaudieffects"
+#endif
 
-/* #defines don't like whitespacey bits */
-#define GST_TYPE_SOLARIZE \
-  (gst_solarize_get_type())
-#define GST_SOLARIZE(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_SOLARIZE,GstSolarize))
-#define GST_SOLARIZE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_SOLARIZE,GstSolarizeClass))
-#define GST_IS_SOLARIZE(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_SOLARIZE))
-#define GST_IS_SOLARIZE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_SOLARIZE))
-
-typedef struct _GstSolarize      GstSolarize;
-typedef struct _GstSolarizeClass GstSolarizeClass;
-
-struct _GstSolarize
+static gboolean
+plugin_init (GstPlugin * plugin)
 {
-  GstVideoFilter videofilter;
+  gboolean ret = TRUE;
 
-  /* < private > */
+  ret &= gst_burn_plugin_init (plugin);
+  ret &= gst_chromium_plugin_init (plugin);
+  ret &= gst_dilate_plugin_init (plugin);
+  ret &= gst_dodge_plugin_init (plugin);
+  ret &= gst_exclusion_plugin_init (plugin);
+  ret &= gst_solarize_plugin_init (plugin);
+  ret &= gst_gauss_blur_plugin_init (plugin);
 
-  gint width, height;
+  return ret;
+}
 
-  gint threshold, start, end;
-  gboolean silent;
-};
-
-struct _GstSolarizeClass
-{
-  GstVideoFilterClass parent_class;
-};
-
-GType gst_solarize_get_type (void);
-
-G_END_DECLS
-
-#endif /* __GST_SOLARIZE_H__ */
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+    GST_VERSION_MINOR,
+    "gaudieffects",
+    "Gaudi video effects.",
+    plugin_init, VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
