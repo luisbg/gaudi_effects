@@ -183,7 +183,7 @@ gst_solarize_class_init (GstSolarizeClass * klass)
   trans_class->transform = GST_DEBUG_FUNCPTR (gst_solarize_transform);
 }
 
-/* Initialize the new element,
+/* Initialize the element,
  * instantiate pads and add them to element,
  * set pad calback functions, and
  * initialize instance structure.

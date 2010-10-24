@@ -64,6 +64,7 @@ struct GstChromium
   GstVideoFilter videofilter;
   gint width, height;
 
+  /* < private > */
   gint edge_a, edge_b;
   gboolean silent;
 };

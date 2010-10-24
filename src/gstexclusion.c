@@ -169,7 +169,7 @@ gst_exclusion_class_init (GstExclusionClass * klass)
   trans_class->transform = GST_DEBUG_FUNCPTR (gst_exclusion_transform);
 }
 
-/* Initialize the new element,
+/* Initialize the element,
  * instantiate pads and add them to element,
  * set pad calback functions, and
  * initialize instance structure.

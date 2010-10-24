@@ -168,7 +168,7 @@ gst_burn_class_init (GstBurnClass * klass)
   trans_class->transform = GST_DEBUG_FUNCPTR (gst_burn_transform);
 }
 
-/* Initialize the new element,
+/* Initialize the element,
  * instantiate pads and add them to element,
  * set pad calback functions, and
  * initialize instance structure.
