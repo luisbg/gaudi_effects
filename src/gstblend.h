@@ -1,9 +1,9 @@
 /*
  * GStreamer
- * Copyright (C) 2005 Thomas Vander Stichele <thomas@apestaart.org>
- * Copyright (C) 2005 Ronald S. Bultje <rbultje@ronald.bitfreak.net>
- * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>
+ * Copyright (C) 2010 Luis de Bethencourt <luis@debethencourt.com>>
  * 
+ * Blend - blend video effect.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -43,42 +43,38 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#ifndef __GST_BLEND_H__
+#define __GST_BLEND_H__
 
 #include <gst/gst.h>
+#include <gst/video/video.h>
+#include <gst/video/gstvideofilter.h>
 
-#include "gstplugin.h"
+G_BEGIN_DECLS
 
-/* PACKAGE: this is usually set by autotools depending on some _INIT macro
- * in configure.ac and then written into and defined in config.h, but we can
- * just set it ourselves here in case someone doesn't use autotools to
- * compile this code. GST_PLUGIN_DEFINE needs PACKAGE to be defined.
- */
-#ifndef PACKAGE
-#define PACKAGE "gaudieffects"
-#endif
+#define GST_TYPE_BLEND (gst_blend_get_type())
+#define GST_BLEND(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_BLEND,GstBlend))
 
-static gboolean
-plugin_init (GstPlugin * plugin)
+typedef struct GstBlend      GstBlend;
+typedef struct GstBlendClass GstBlendClass;
+
+struct GstBlend
 {
-  gboolean ret = TRUE;
+  GstVideoFilter videofilter;
+  gint width, height;
 
-  ret &= gst_burn_plugin_init (plugin);
-  ret &= gst_chromium_plugin_init (plugin);
-  ret &= gst_dilate_plugin_init (plugin);
-  ret &= gst_dodge_plugin_init (plugin);
-  ret &= gst_exclusion_plugin_init (plugin);
-  ret &= gst_solarize_plugin_init (plugin);
-  ret &= gst_gauss_blur_plugin_init (plugin);
-  ret &= gst_blend_plugin_init (plugin);
+  guint32 *buffer;
+  guint32 *current_buffer, *prev_buffer;
+};
 
-  return ret;
-}
+struct GstBlendClass
+{
+  GstVideoFilterClass parent_class;
+};
 
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    "gaudieffects",
-    "Gaudi video effects.",
-    plugin_init, VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
+GType gst_blend_get_type (void);
+
+G_END_DECLS
+
+#endif
